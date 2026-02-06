@@ -4,6 +4,8 @@ import { db } from "./db";
 import { readSheet } from "./sheets/read";
 import { normalizeSheetRows } from "./sheets/normalize";
 import { upsertRows, getAllRows } from "./db/rows";
+import { ensureMetadataColumns } from "./sheets/metadata";
+import { writeMissingRowMetadata } from "./sheets/writeMetadata";
 
 const app = express();
 app.use(express.json());
@@ -23,17 +25,16 @@ app.listen(env.port, () => {
 
 app.get("/sheet", async (_, res) => {
   try {
+    await ensureMetadataColumns();
+    await writeMissingRowMetadata();
+
     const rawRows = await readSheet();
     const normalized = normalizeSheetRows(rawRows);
 
     await upsertRows(normalized);
-
     const dbRows = await getAllRows();
 
-    res.json({
-      source: "db",
-      rows: dbRows,
-    });
+    res.json({ source: "db", rows: dbRows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to sync sheet to DB" });
