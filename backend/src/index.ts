@@ -9,6 +9,7 @@ import { writeMissingRowMetadata } from "./sheets/writeMetadata";
 import { diffRows } from "./sync/diff";
 import { applySheetToDb } from "./sync/applySheetToDb";
 import { bumpSheetUpdatedAtIfNeeded } from "./sync/bumpSheetUpdatedAt";
+import { applyDbDeletes } from "./sync/applyDeletes";
 
 const app = express();
 app.use(express.json());
@@ -64,16 +65,15 @@ app.post("/sync/sheet-to-db", async (_, res) => {
     const sheetRows1 = normalizeSheetRows(rawRows1);
     const dbRows1 = await getAllRows();
 
-    // STEP A: bump updated_at in Sheet if data changed
     await bumpSheetUpdatedAtIfNeeded(sheetRows1, dbRows1);
 
-    // STEP B: re-read Sheet after bump
     const rawRows2 = await readSheet();
     const sheetRows2 = normalizeSheetRows(rawRows2);
     const dbRows2 = await getAllRows();
 
     const diff = diffRows(sheetRows2, dbRows2);
     await applySheetToDb(diff);
+    await applyDbDeletes(diff);
 
     res.json({ applied: diff });
   } catch (err) {
