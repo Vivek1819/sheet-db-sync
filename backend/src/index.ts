@@ -6,6 +6,8 @@ import { normalizeSheetRows } from "./sheets/normalize";
 import { upsertRows, getAllRows } from "./db/rows";
 import { ensureMetadataColumns } from "./sheets/metadata";
 import { writeMissingRowMetadata } from "./sheets/writeMetadata";
+import { diffRows } from "./sync/diff";
+
 
 const app = express();
 app.use(express.json());
@@ -38,5 +40,19 @@ app.get("/sheet", async (_, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to sync sheet to DB" });
+  }
+});
+
+app.get("/diff", async (_, res) => {
+  try {
+    const rawRows = await readSheet();
+    const sheetRows = normalizeSheetRows(rawRows);
+    const dbRows = await getAllRows();
+
+    const diff = diffRows(sheetRows, dbRows);
+    res.json(diff);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to diff rows" });
   }
 });
