@@ -4,10 +4,16 @@ dotenv.config();
 
 export const env = {
   port: Number(process.env.PORT) || 3001,
+
   db: {
     host: process.env.DB_HOST!,
     user: process.env.DB_USER!,
     password: process.env.DB_PASSWORD!,
     name: process.env.DB_NAME!,
+  },
+
+  google: {
+    sheetId: process.env.GOOGLE_SHEET_ID!,
+    credentialsPath: "credentials/service-account.json",
   },
 };
