@@ -11,9 +11,22 @@ import { applySheetToDb } from "./sync/applySheetToDb";
 import { bumpSheetUpdatedAtIfNeeded } from "./sync/bumpSheetUpdatedAt";
 import { applyDbDeletes } from "./sync/applyDeletes";
 import { runSync } from "./sync/runSync";
+import dbRoutes from "./routes/db";
+import { reorderMetadataColumns } from "./sheets/reorderMetadata";
+import { hideMetadataColumns } from "./sheets/hideMetadata";
 
 const app = express();
 app.use(express.json());
+app.use("/db", dbRoutes);
+
+async function setupSheetOnce() {
+  await ensureMetadataColumns();
+  await writeMissingRowMetadata();
+  await hideMetadataColumns();
+  await reorderMetadataColumns();
+}
+
+setupSheetOnce().catch(console.error);
 
 app.get("/health", async (_, res) => {
   try {
