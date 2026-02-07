@@ -4,6 +4,7 @@ export type DiffResult = {
   toInsert: CanonicalRow[];
   toUpdate: CanonicalRow[];
   toDelete: CanonicalRow[];
+  toUpdateSheet: CanonicalRow[];
 };
 
 export function diffRows(
@@ -19,6 +20,7 @@ export function diffRows(
   const toInsert: CanonicalRow[] = [];
   const toUpdate: CanonicalRow[] = [];
   const toDelete: CanonicalRow[] = [];
+  const toUpdateSheet: CanonicalRow[] = [];
 
   // Sheet → DB (insert / update)
   for (const sheetRow of sheetRows) {
@@ -30,7 +32,9 @@ export function diffRows(
     }
 
     if (sheetRow.updated_at > dbRow.updated_at) {
-      toUpdate.push(sheetRow);
+      toUpdate.push(sheetRow); // Sheet → DB
+    } else if (dbRow.updated_at > sheetRow.updated_at) {
+      toUpdateSheet.push(dbRow); // DB → Sheet
     }
   }
 
@@ -41,5 +45,5 @@ export function diffRows(
     }
   }
 
-  return { toInsert, toUpdate, toDelete };
+  return { toInsert, toUpdate, toDelete, toUpdateSheet };
 }

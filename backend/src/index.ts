@@ -30,7 +30,7 @@ app.listen(env.port, () => {
 
 setInterval(() => {
   runSync().catch(console.error);
-}, 5_000);
+}, 60_000);
 
 
 app.get("/sheet", async (_, res) => {
