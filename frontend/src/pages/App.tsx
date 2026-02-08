@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchRows, runSync, insertRow } from "../api/client";
+import { fetchRows, runSync, insertRow, addColumn } from "../api/client";
 import type { CanonicalRow } from "../types/row";
 import { RowsTable } from "../components/RowsTable";
 import SyncControls from "../components/SyncControls";
@@ -8,6 +8,7 @@ import "../App.css";
 function App() {
   const [rows, setRows] = useState<CanonicalRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [addingCol, setAddingCol] = useState(false);
 
   async function loadRows() {
     const data = await fetchRows();
@@ -17,6 +18,24 @@ function App() {
   async function handleAddRow() {
     const row = await insertRow({});
     setRows((prev) => [...prev, row]);
+  }
+
+  async function handleAddColumn() {
+    const name = prompt("Enter new column name (e.g. Email)");
+    if (!name) return;
+
+    try {
+      setAddingCol(true);
+      await addColumn(name);
+      // Wait a moment for DB/Sheet to sync up if possible, or just reload rows
+      // Ideally run a sync to force sheet update
+      await loadRows();
+      alert(`Column "${name}" added! It will appear after the next sync.`);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setAddingCol(false);
+    }
   }
 
   async function handleSync() {
@@ -53,7 +72,17 @@ function App() {
           }}
         />
 
-        <div className="add-row-container">
+        <div className="add-row-container" style={{ gap: '1rem' }}>
+          <button
+            onClick={handleAddColumn}
+            className="btn-add"
+            disabled={addingCol}
+            style={{ borderColor: 'var(--neon-purple)', color: 'var(--neon-purple)' }}
+          >
+            <span className="plus-icon">+</span>
+            <span>{addingCol ? "ADDING..." : "ADD COL"}</span>
+          </button>
+
           <button onClick={handleAddRow} className="btn-add">
             <span className="plus-icon">+</span>
             <span>NEW ENTRY</span>

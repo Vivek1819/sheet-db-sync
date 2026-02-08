@@ -42,3 +42,18 @@ export async function deleteRow(row_id: string) {
   });
   return res.json();
 }
+
+export async function addColumn(name: string) {
+  const res = await fetch(`${BASE_URL}/db/columns`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to add column");
+  }
+
+  return res.json();
+}

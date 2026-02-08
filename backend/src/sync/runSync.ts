@@ -19,14 +19,27 @@ export async function runSync() {
   isRunning = true;
 
   try {
-    await ensureMetadataColumns();
+    // ─────────────
+    // SCHEMA SYNC PHASE (New)
+    // ─────────────
+    // 1. Get all DB rows first to know what columns exist
+    const dbRows = await getAllRows();
+
+    // 2. Collect all unique keys from DB (excluding metadata)
+    const allDbKeys = new Set<string>();
+    dbRows.forEach(row => {
+      Object.keys(row.data).forEach(key => allDbKeys.add(key));
+    });
+
+    // 3. Ensure these keys exist in Sheet Headers
+    await ensureMetadataColumns(Array.from(allDbKeys));
+
     await writeMissingRowMetadata();
 
     // ─────────────
     // READ PHASE
     // ─────────────
     const sheetRows = normalizeSheetRows(await readSheet());
-    const dbRows = await getAllRows();
 
     // Ensure sheet edits get timestamps
     await bumpSheetUpdatedAtIfNeeded(sheetRows, dbRows);
@@ -45,7 +58,7 @@ export async function runSync() {
     // 1️⃣ Sheet → DB
     await applySheetToDb(diff);
 
-    // 2️⃣ DB → Sheet INSERT (🔥 THIS IS WHAT WAS MISSING)
+    // 2️⃣ DB → Sheet INSERT
     const dbRowsAfter = await getAllRows();
     const sheetRowsFinal = normalizeSheetRows(await readSheet());
 
@@ -65,8 +78,9 @@ export async function runSync() {
     await hideDeletedRowsInSheet();
 
 
+  } catch (err) {
+    console.error("[Sync] Error:", err);
   } finally {
     isRunning = false;
   }
 }
-
