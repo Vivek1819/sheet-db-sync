@@ -11,6 +11,7 @@ import { ensureMetadataColumns } from "../sheets/metadata";
 import { writeMissingRowMetadata } from "../sheets/writeMetadata";
 import { hideDeletedRowsInSheet } from "./applyDbDeletesVisibilityToSheet";
 import { bumpSheetUpdatedAtIfNeeded } from "./bumpSheetUpdatedAt";
+import { logAudit } from "../db/audit";
 
 let isRunning = false;
 
@@ -49,13 +50,26 @@ export async function runSync() {
     // ─────────────
     // DIFF
     // ─────────────
+    // ─────────────
+    // DIFF
+    // ─────────────
     const diff = diffRows(sheetRowsAfter, dbRows);
+
+    if (diff.toInsert.length > 0 || diff.toUpdate.length > 0 || diff.toUpdateSheet.length > 0) {
+      logAudit("SYNC_START", `Sync started. Diff detected.`);
+    }
 
     // ─────────────
     // APPLY
     // ─────────────
 
     // 1️⃣ Sheet → DB
+    if (diff.toInsert.length > 0) {
+      logAudit("INSERT", `Inserting ${diff.toInsert.length} rows from Sheet to DB`);
+    }
+    if (diff.toUpdate.length > 0) {
+      logAudit("UPDATE", `Updating ${diff.toUpdate.length} rows from Sheet to DB`);
+    }
     await applySheetToDb(diff);
 
     // 2️⃣ DB → Sheet INSERT
@@ -68,14 +82,22 @@ export async function runSync() {
         !sheetRowsFinal.some(sheetRow => sheetRow.row_id === dbRow.row_id)
     );
 
-    await applyDbInsertToSheet(rowsToInsertIntoSheet);
+    if (rowsToInsertIntoSheet.length > 0) {
+      logAudit("INSERT", `Inserting ${rowsToInsertIntoSheet.length} rows from DB to Sheet`);
+      await applyDbInsertToSheet(rowsToInsertIntoSheet);
+    }
 
     // 3️⃣ DB → Sheet UPDATE
-    await applyDbToSheet(diff.toUpdateSheet);
+    if (diff.toUpdateSheet.length > 0) {
+      logAudit("UPDATE", `Updating ${diff.toUpdateSheet.length} rows from DB to Sheet`);
+      await applyDbToSheet(diff.toUpdateSheet);
+    }
 
     // 4️⃣ DB → Sheet DELETE / VISIBILITY
+    // We could log deletes here if we track them explicitly, currently applyDbDeletesToSheet handles logic internally
     await applyDbDeletesToSheet(dbRowsAfter);
     await hideDeletedRowsInSheet();
+
 
 
   } catch (err) {

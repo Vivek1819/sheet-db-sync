@@ -5,6 +5,7 @@ import { RowsTable } from "../components/RowsTable";
 import SyncControls from "../components/SyncControls";
 import { useToast } from "../context/ToastContext";
 import { InputModal } from "../components/InputModal";
+import { TerminalWidget } from "../components/TerminalWidget";
 import "../App.css";
 
 function App() {
@@ -94,18 +95,24 @@ function App() {
   return (
     <div className="app-container">
       <header className="dashboard-header">
-        <h1 className="dashboard-title">
-          NEXUS SYNC
-          <span className="live-badge">LIVE</span>
+        <h1 className="app-title">
+          Bi-Sync <span className="badge-live">LIVE</span>
         </h1>
-        <div className="cluster-subtitle">Data/Sheet Bridge v2.0</div>
+        <p className="app-subtitle">DATA/SHEET BRIDGE</p>
       </header>
 
-      <SyncControls onSync={handleSync} loading={loading} />
+      {/* SYNC CONTROLS */}
+      <section className="control-panel">
+        <SyncControls
+          onSync={handleSync}
+          loading={loading}
+        />
+      </section>
 
-      <section className="data-section">
-        <div className="section-header">
-          <h2 className="section-title">LIVE RECORDS</h2>
+      {/* DATA TABLE */}
+      <section className="data-panel">
+        <div className="panel-header">
+          <h2 className="section-title">DB RECORDS</h2>
         </div>
 
         <RowsTable
@@ -134,6 +141,7 @@ function App() {
         </div>
       </section>
 
+
       {/* MODALS */}
       <InputModal
         isOpen={showColModal}
@@ -142,6 +150,10 @@ function App() {
         onClose={() => setShowColModal(false)}
         onSubmit={handleColumnSubmit}
       />
+
+      <div style={{ marginTop: '2rem' }}>
+        <TerminalWidget />
+      </div>
     </div>
   );
 }

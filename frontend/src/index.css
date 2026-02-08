@@ -340,3 +340,122 @@ button {
   color: #fff;
   box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
 }
+
+/* TERMINAL WIDGET */
+.terminal-container {
+  background: #0d0d12;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  font-family: 'Space Mono', monospace;
+  overflow: hidden;
+  margin-top: 2rem;
+  box-shadow: var(--panel-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 250px;
+  backdrop-filter: blur(10px);
+}
+
+.terminal-header {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.terminal-title {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  font-family: var(--font-display);
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.terminal-controls .control {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+.control.red {
+  background: #ff5f56;
+}
+
+.control.yellow {
+  background: #ffbd2e;
+}
+
+.control.green {
+  background: #27c93f;
+}
+
+.terminal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  color: var(--neon-green);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-shadow: 0 0 5px rgba(10, 255, 104, 0.3);
+}
+
+.terminal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.terminal-body::-webkit-scrollbar-thumb {
+  background: rgba(10, 255, 104, 0.2);
+  border-radius: 3px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 6px;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+}
+
+.log-time {
+  color: var(--text-muted);
+  min-width: 85px;
+  font-size: 0.75rem;
+}
+
+.log-type {
+  font-weight: bold;
+  min-width: 80px;
+  text-transform: uppercase;
+}
+
+.type-SYNC_START {
+  color: var(--neon-cyan);
+}
+
+.type-INSERT {
+  color: var(--neon-green);
+}
+
+.type-UPDATE {
+  color: var(--neon-purple);
+}
+
+.type-DELETE {
+  color: var(--neon-red);
+}
+
+.type-SCHEMA {
+  color: #ffeb3b;
+}
+
+.log-msg {
+  color: #e0e0e0;
+  font-family: 'Space Mono', monospace;
+}

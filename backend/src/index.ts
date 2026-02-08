@@ -12,6 +12,7 @@ import { bumpSheetUpdatedAtIfNeeded } from "./sync/bumpSheetUpdatedAt";
 import { applyDbDeletes } from "./sync/applyDeletes";
 import { runSync } from "./sync/runSync";
 import dbRoutes from "./routes/db";
+import logsRouter from "./routes/logs";
 import { reorderMetadataColumns } from "./sheets/reorderMetadata";
 import { hideMetadataColumns } from "./sheets/hideMetadata";
 import cors from "cors";
@@ -21,6 +22,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/db", dbRoutes);
+app.use("/logs", logsRouter);
 
 async function setupSheetOnce() {
   await ensureMetadataColumns();
