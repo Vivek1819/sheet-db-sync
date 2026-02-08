@@ -3,46 +3,79 @@ import { fetchRows, runSync, insertRow, addColumn } from "../api/client";
 import type { CanonicalRow } from "../types/row";
 import { RowsTable } from "../components/RowsTable";
 import SyncControls from "../components/SyncControls";
+import { useToast } from "../context/ToastContext";
+import { InputModal } from "../components/InputModal";
 import "../App.css";
 
 function App() {
   const [rows, setRows] = useState<CanonicalRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [addingCol, setAddingCol] = useState(false);
+
+  // Modal State
+  const [showColModal, setShowColModal] = useState(false);
+  const [submittingCol, setSubmittingCol] = useState(false);
+
+  const { addToast } = useToast();
 
   async function loadRows() {
-    const data = await fetchRows();
-    setRows(data);
+    try {
+      const data = await fetchRows();
+      setRows(data);
+    } catch (err) {
+      // Silent fail on background poll usually, but maybe toast on first load?
+    }
   }
 
   async function handleAddRow() {
-    const row = await insertRow({});
-    setRows((prev) => [...prev, row]);
+    try {
+      const row = await insertRow({});
+      setRows((prev) => [...prev, row]);
+      addToast("New entry created", "success");
+    } catch (err: any) {
+      addToast("Failed to create entry", "error");
+    }
   }
 
-  async function handleAddColumn() {
-    const name = prompt("Enter new column name (e.g. Email)");
+  // Open Modal
+  function handleOpenAddColumn() {
+    setShowColModal(true);
+  }
+
+  // Handle Modal Submit
+  async function handleColumnSubmit(name: string) {
     if (!name) return;
 
     try {
-      setAddingCol(true);
+      setSubmittingCol(true);
       await addColumn(name);
-      // Wait a moment for DB/Sheet to sync up if possible, or just reload rows
-      // Ideally run a sync to force sheet update
+
+      // Close modal immediately
+      setShowColModal(false);
+
+      addToast(`Column "${name}" added to Schema`, "success");
+      addToast("Syncing schema...", "info");
+
+      // Reload to see if it pushed (might take a sec)
       await loadRows();
-      alert(`Column "${name}" added! It will appear after the next sync.`);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      addToast(err.message || "Failed to add column", "error");
     } finally {
-      setAddingCol(false);
+      setSubmittingCol(false);
     }
   }
 
   async function handleSync() {
     setLoading(true);
-    await runSync();
-    await loadRows();
-    setLoading(false);
+    addToast("Sync initiated...", "info");
+    try {
+      await runSync();
+      await loadRows();
+      addToast("Sync complete", "success");
+    } catch (err) {
+      addToast("Sync failed", "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -79,18 +112,19 @@ function App() {
           rows={activeRows}
           onRowDeleted={(rowId) => {
             setRows((prev) => prev.filter((r) => r.row_id !== rowId));
+            addToast("Row deleted", "info");
           }}
         />
 
         <div className="add-row-container" style={{ gap: '1rem' }}>
           <button
-            onClick={handleAddColumn}
+            onClick={handleOpenAddColumn}
             className="btn-add"
-            disabled={addingCol}
+            disabled={submittingCol}
             style={{ borderColor: 'var(--neon-purple)', color: 'var(--neon-purple)' }}
           >
             <span className="plus-icon">+</span>
-            <span>{addingCol ? "ADDING..." : "ADD COL"}</span>
+            <span>ADD COL</span>
           </button>
 
           <button onClick={handleAddRow} className="btn-add">
@@ -99,6 +133,15 @@ function App() {
           </button>
         </div>
       </section>
+
+      {/* MODALS */}
+      <InputModal
+        isOpen={showColModal}
+        title="NEW SCHEMA COLUMN"
+        placeholder="Column Name (e.g. Phone)"
+        onClose={() => setShowColModal(false)}
+        onSubmit={handleColumnSubmit}
+      />
     </div>
   );
 }
